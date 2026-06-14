@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>AES-RSA Server Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-burgundy: #140510;
+            --pink-neon: #ff1493;
+            --gold-justice: #ffd700;
+        }
+        body {
+            background: linear-gradient(rgba(20, 5, 16, 0.84), rgba(20, 5, 16, 0.84)),
+                        url('/static/Lobotomy_E.G.O_In_the_Name_of_Love_and_Hate_Don_Quixote_Full.png') center/cover no-repeat fixed;
+            color: #f3f0df;
+            padding-top: 30px;
+        }
+        .monitor-card {
+            background: rgba(35, 5, 20, 0.9); border: 2px solid var(--gold-justice);
+            border-radius: 12px; box-shadow: 0 0 25px rgba(255, 215, 0, 0.2);
+        }
+        .monitor-header {
+            background: #2d091b; padding: 15px; border-bottom: 2px solid var(--pink-neon);
+        }
+        #log-zone {
+            height: 450px; overflow-y: auto; background: black;
+            border-radius: 6px; border: 1px solid var(--pink-neon); padding: 15px;
+        }
+        .log-item { border-left: 3px solid var(--pink-neon); padding-left: 10px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card monitor-card text-white">
+            <div class="monitor-header d-flex justify-content-between align-items-center">
+                <h4 class="m-0 text-warning font-monospace fw-bold">AES_RSA_SOCKET Server Log</h4>
+                <a href="/" class="btn btn-outline-warning btn-sm fw-bold">Thoát</a>
+            </div>
+            <div class="card-body p-4">
+                <h6 class="text-muted font-monospace mb-3">Nhật ký xử lý mã hóa thời gian thực:</h6>
+                <div id="log-zone" class="font-monospace text-success small">
+                    [Hệ thống] Đang đợi kết nối từ các client qua api.py...<br>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        socket.on('connect', () => {
+            socket.emit('join_server_dashboard');
+        });
+
+        socket.on('server_log', (data) => {
+            const zone = document.getElementById('log-zone');
+            if (data.type === 'connect') {
+                zone.innerHTML += `<div class="text-info my-1">[CONNECT] ${data.message} <br> ↳ Khóa AES đối xứng cấp riêng: <span class="text-white">${data.aes_key_hex}</span></div>`;
+            } else if (data.type === 'disconnect') {
+                zone.innerHTML += `<div class="text-danger my-1">[DISCONNECT] ${data.message}</div>`;
+            } else if (data.type === 'msg') {
+                zone.innerHTML += `
+                    <div class="log-item text-light">
+                        <strong class="text-warning">[Intercepted from ${data.username}]:</strong> "${data.raw_text}"<br>
+                        <span style="color: #ff1493;">↳ Mã hóa AES_RSA gửi trên kênh truyền (Hex)::</span> <br>
+                        <span class="text-break fw-bold" style="color: #ffb6c1;">${data.encrypted_hex}</span>
+                    </div>`;
+            }
+            zone.scrollTop = zone.scrollHeight;
+        });
+    </script>
+</body>
+</html>

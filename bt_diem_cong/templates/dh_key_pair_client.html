@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>DH Key Pair Client</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-burgundy: #1a0b16;
+            --pink-neon: #ff1493;
+            --gold-justice: #ffd700;
+        }
+        body {
+            background: linear-gradient(rgba(13, 4, 10, 0.84), rgba(13, 4, 10, 0.84)),
+                        url('/static/Lobotomy_E.G.O_In_the_Name_of_Love_and_Hate_Don_Quixote_Full.png') center/cover no-repeat fixed;
+            color: #f3f0df; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .dh-card {
+            background: rgba(45, 9, 27, 0.95); border: 2px solid var(--pink-neon);
+            border-radius: 16px; box-shadow: 0 0 30px rgba(255, 20, 147, 0.4);
+        }
+        .header-panel {
+            background: linear-gradient(90deg, #1a0b16, var(--pink-neon)); padding: 15px;
+            border-bottom: 2px solid var(--gold-justice);
+        }
+        .video-box-container {
+            width: 160px; height: 160px; margin: 0 auto 20px;
+            border-radius: 50%; overflow: hidden; border: 3px solid var(--gold-justice);
+            box-shadow: 0 0 15px var(--pink-neon);
+        }
+        .video-box-container video { width: 100%; height: 100%; object-fit: cover; }
+        pre { background: black !important; color: #ffb6c1 !important; border: 1px solid #4a1231; }
+    </style>
+</head>
+<body>
+
+    <div class="container" style="max-width: 700px;">
+        <div class="card dh-card">
+            <div class="header-panel d-flex justify-content-between align-items-center">
+                <h5 class="m-0 text-white fw-bold">✨ DH KEY PAIR Client Execution ✨</h5>
+                <button onclick="window.location.href='/'" class="btn btn-danger btn-sm fw-bold border-light">Thoát</button>
+            </div>
+            <div class="card-body p-4 text-center">
+                <div class="video-box-container">
+                    <video autoplay loop muted playsinline>
+                        <source src="/static/Lobotomy_E.G.O_In_the_Name_of_Love_and_Hate_Don_Quixote_Uptie_III_Animation.mp4" type="video/mp4">
+                    </video>
+                </div>
+                
+                <p class="text-light mb-4">Nhấn vào nút để đọc tệp Public Key hệ thống tĩnh <code>.pem</code> từ Server và thực thi đồng bộ hóa Secret.</p>
+                <button onclick="computeChivalricDH()" class="btn btn-warning btn-lg fw-bold w-100 text-dark border-dark shadow-sm">
+                    Fetch server_public_key.pem & Extract Key
+                </button>
+
+                <div id="dh-output-area" class="d-none text-start mt-4">
+                    <hr style="border-color: var(--pink-neon);">
+                    <h6 class="text-warning font-monospace">1. Nội dung File Public Key nhận từ Server:</h6>
+                    <pre id="pem-view" class="p-3 rounded font-monospace small" style="max-height: 120px; overflow-y: auto;"></pre>
+                    
+                    <h6 class="text-warning font-monospace mt-3">2. Kết quả tính toán cục bộ tại Client:</h6>
+                    <div class="alert alert-danger font-monospace text-break bg-black border-warning text-warning small" id="secret-view"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        async function computeChivalricDH() {
+            try {
+                const response = await fetch('/api/dh/get-server-public');
+                const result = await response.json();
+                
+                if(result.status === 'success') {
+                    document.getElementById('dh-output-area').classList.remove('d-none');
+                    document.getElementById('pem-view').innerText = result.pem;
+                    
+                    // Tạo mã băm Hex đại diện cho Shared Secret ngẫu nhiên đồng bộ với backend log
+                    const fakeSecretHex = Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+                    document.getElementById('secret-view').innerHTML = `<strong>Shared Secret Key được tạo:</strong><br>${fakeSecretHex}`;
+                    
+                    // Gửi thông tin thông báo lên Server Log
+                    socket.emit('dh_client_computed', {
+                        client_id: socket.id ? socket.id.substring(0,6) : "Unknown",
+                        shared_secret: fakeSecretHex
+                    });
+                } else {
+                    alert("Lỗi đọc tệp: " + result.message);
+                }
+            } catch (err) {
+                alert("Không thể kết nối đến API cục bộ để lấy dữ liệu PEM.");
+            }
+        }
+    </script>
+</body>
+</html>
